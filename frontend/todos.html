@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>My To-Do List</title>
+</head>
+<body>
+  <h2>Welcome! Your To-Dos</h2>
+  <input id="newTodo" placeholder="Enter a todo">
+  <button onclick="addTodo()">Add</button>
+  <ul id="todoList"></ul>
+
+  <script>
+    const token = localStorage.getItem("token");
+
+    async function fetchTodos() {
+      const res = await fetch("http://localhost:5000/todo", {
+        headers: { "Authorization": token }
+      });
+      if (!res.ok) {
+    const errorText = await res.text();
+    console.error("Error fetching todos:", errorText);
+    return;
+  }
+
+  const todos = await res.json();
+
+      const list = document.getElementById("todoList");
+      list.innerHTML = "";
+
+      todos.forEach(todo => {
+        const li = document.createElement("li");
+        li.innerHTML = `
+          ${todo.completed ? "<s>" : ""}${todo.title}${todo.completed ? "</s>" : ""}
+          <button onclick="toggle('${todo._id}')">Toggle</button>
+          <button onclick="del('${todo._id}')">Delete</button>
+        `;
+        list.appendChild(li);
+      });
+    }
+
+    async function addTodo() {
+      const title = document.getElementById("newTodo").value;
+      await fetch("http://localhost:5000/todo", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": token
+        },
+        body: JSON.stringify({ title })
+      });
+      document.getElementById("newTodo").value = "";
+      fetchTodos();
+    }
+
+    async function toggle(id) {
+      await fetch(`http://localhost:5000/todo/${id}`, {
+        method: "PUT",
+        headers: { "Authorization": token }
+      });
+      fetchTodos();
+    }
+
+    async function del(id) {
+      await fetch(`http://localhost:5000/todo/${id}`, {
+        method: "DELETE",
+        headers: { "Authorization": token }
+      });
+      fetchTodos();
+    }
+
+    fetchTodos();
+  </script>
+</body>
+</html>
